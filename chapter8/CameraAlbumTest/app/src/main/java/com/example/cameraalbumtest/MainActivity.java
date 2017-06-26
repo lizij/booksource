@@ -9,12 +9,11 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.opengl.GLES10;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
@@ -26,10 +25,16 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
+
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     public static final int TAKE_PHOTO = 1;
 
     public static final int CHOOSE_PHOTO = 2;
@@ -108,8 +113,7 @@ public class MainActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     try {
                         // 将拍摄的照片显示出来
-                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
-                        picture.setImageBitmap(bitmap);
+                        displayImage(TAKE_PHOTO, null);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -155,13 +159,13 @@ public class MainActivity extends AppCompatActivity {
             // 如果是file类型的Uri，直接获取图片路径即可
             imagePath = uri.getPath();
         }
-        displayImage(imagePath); // 根据图片路径显示图片
+        displayImage(CHOOSE_PHOTO, imagePath); // 根据图片路径显示图片
     }
 
     private void handleImageBeforeKitKat(Intent data) {
         Uri uri = data.getData();
         String imagePath = getImagePath(uri, null);
-        displayImage(imagePath);
+        displayImage(CHOOSE_PHOTO, imagePath);
     }
 
     private String getImagePath(Uri uri, String selection) {
@@ -177,13 +181,88 @@ public class MainActivity extends AppCompatActivity {
         return path;
     }
 
-    private void displayImage(String imagePath) {
-        if (imagePath != null) {
-            Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
+    private void displayImage(int option, String imagePath) {
+        Bitmap bitmap = null;
+        try{
+            if(option == TAKE_PHOTO){
+                bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
+            }else if(option == CHOOSE_PHOTO) {
+                if (imagePath != null) {
+                    bitmap = BitmapFactory.decodeFile(imagePath);
+                }
+            }else {
+                Toast.makeText(this, "failed to get image", Toast.LENGTH_SHORT).show();
+            }
             picture.setImageBitmap(bitmap);
-        } else {
-            Toast.makeText(this, "failed to get image", Toast.LENGTH_SHORT).show();
+            if (isNeedCloseHardwareAcceleration(bitmap.getWidth(), bitmap.getHeight())) {
+                picture.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
+    }
+
+    //added for handle exception "Bitmap too large to be uploaded into a texture".
+    public boolean isNeedCloseHardwareAcceleration(int w, int h) {
+        int maxSize;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            maxSize = getGLESTextureLimitEqualAboveLollipop();
+        } else {
+            maxSize = getGLESTextureLimitBelowLollipop();
+        }
+
+        if(maxSize > w && maxSize > h){
+            return false;
+        }
+
+        return true;
+    }
+
+    private int getGLESTextureLimitBelowLollipop() {
+        int[] maxSize = new int[1];
+        GLES10.glGetIntegerv(GLES10.GL_MAX_TEXTURE_SIZE, maxSize, 0);
+        return maxSize[0];
+    }
+
+    private int getGLESTextureLimitEqualAboveLollipop() {
+        EGL10 egl = (EGL10) EGLContext.getEGL();
+        EGLDisplay dpy = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+        int[] vers = new int[2];
+        egl.eglInitialize(dpy, vers);
+        int[] configAttr = {
+                EGL10.EGL_COLOR_BUFFER_TYPE, EGL10.EGL_RGB_BUFFER,
+                EGL10.EGL_LEVEL, 0,
+                EGL10.EGL_SURFACE_TYPE, EGL10.EGL_PBUFFER_BIT,
+                EGL10.EGL_NONE
+        };
+        EGLConfig[] configs = new EGLConfig[1];
+        int[] numConfig = new int[1];
+        egl.eglChooseConfig(dpy, configAttr, configs, 1, numConfig);
+        if (numConfig[0] == 0) {// TROUBLE! No config found.
+        }
+        EGLConfig config = configs[0];
+        int[] surfAttr = {
+                EGL10.EGL_WIDTH, 64,
+                EGL10.EGL_HEIGHT, 64,
+                EGL10.EGL_NONE
+        };
+        EGLSurface surf = egl.eglCreatePbufferSurface(dpy, config, surfAttr);
+        final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;  // missing in EGL10
+        int[] ctxAttrib = {
+                EGL_CONTEXT_CLIENT_VERSION, 1,
+                EGL10.EGL_NONE
+        };
+        EGLContext ctx = egl.eglCreateContext(dpy, config, EGL10.EGL_NO_CONTEXT, ctxAttrib);
+        egl.eglMakeCurrent(dpy, surf, surf, ctx);
+        int[] maxSize = new int[1];
+        GLES10.glGetIntegerv(GLES10.GL_MAX_TEXTURE_SIZE, maxSize, 0);
+        egl.eglMakeCurrent(dpy, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE,
+                EGL10.EGL_NO_CONTEXT);
+        egl.eglDestroySurface(dpy, surf);
+        egl.eglDestroyContext(dpy, ctx);
+        egl.eglTerminate(dpy);
+
+        return maxSize[0];
     }
 
 }
