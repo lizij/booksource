@@ -20,7 +20,7 @@
             android:name=".AnotherBroadcastReceiver"
             android:enabled="true"
             android:exported="true">
-            <intent-filter>
+            <intent-filter android:priority="1">
                 <action android:name="com.example.broadcasttest.MY_BROADCAST" />
             </intent-filter>
         </receiver>

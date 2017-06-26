@@ -15,14 +15,14 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
-    private IntentFilter intentFilter;
+//    private IntentFilter intentFilter;
 
     private LocalReceiver localReceiver;
 
     private LocalBroadcastManager localBroadcastManager;
 
-//    private IntentFilter intentFilter;
-//
+    private IntentFilter intentFilter;
+
 //    private NetworkChangeReceiver networkChangeReceiver;
 
 
@@ -30,19 +30,26 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
 //        intentFilter = new IntentFilter();
 //        intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
 //        networkChangeReceiver = new NetworkChangeReceiver();
 //        registerReceiver(networkChangeReceiver, intentFilter);
+
         localBroadcastManager = LocalBroadcastManager.getInstance(this); // 获取实例
+
         Button button = (Button) findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent("com.example.broadcasttest.LOCAL_BROADCAST");
-                localBroadcastManager.sendBroadcast(intent); // 发送本地广播
+//                Intent intent = new Intent("com.example.broadcasttest.LOCAL_BROADCAST");
+//                localBroadcastManager.sendBroadcast(intent); // 发送本地广播
+                Intent intent = new Intent("com.example.broadcasttest.MY_BROADCAST");
+//                sendBroadcast(intent);
+                sendOrderedBroadcast(intent, null);
             }
         });
+
         intentFilter = new IntentFilter();
         intentFilter.addAction("com.example.broadcasttest.LOCAL_BROADCAST");
         localReceiver = new LocalReceiver();
