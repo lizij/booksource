@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -50,55 +51,69 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.send_request) {
-            sendRequestWithHttpURLConnection();
+//            sendRequestWithHttpURLConnection();
 //            sendRequestWithOkHttp();
+            HttpUtil.sendOkHttpRequest("https://www.baidu.com", new okhttp3.Callback(){
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    showResponse(response.body().string());
+                }
+
+                @Override
+                public void onFailure(Call call, IOException e) {
+
+                }
+            });
         }
     }
 
-    private void sendRequestWithHttpURLConnection() {
-        // 开启线程来发起网络请求
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                HttpURLConnection connection = null;
-                BufferedReader reader = null;
-                try {
-                    URL url = new URL("https://www.baidu.com");
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.setRequestMethod("GET");
-                    connection.setConnectTimeout(8000);
-                    connection.setReadTimeout(8000);
-                    int code = connection.getResponseCode();
-                    if (code == 200){
-                        InputStream in = connection.getInputStream();
-                        // 下面对获取到的输入流进行读取
-//                        reader = new BufferedReader(new InputStreamReader(in));
-                        reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-                        StringBuilder response = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            response.append(line);
-                        }
-                        Log.d(TAG, "run: " + response.toString());
-                        showResponse(response.toString());
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (reader != null) {
-                        try {
-                            reader.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    if (connection != null) {
-                        connection.disconnect();
-                    }
-                }
-            }
-        }).start();
-    }
+//    private void sendRequestWithHttpURLConnection() {
+//        // 开启线程来发起网络请求
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                HttpURLConnection connection = null;
+//                BufferedReader reader = null;
+//                try {
+//                    URL url = new URL("https://www.baidu.com");
+//                    connection = (HttpURLConnection) url.openConnection();
+//                    connection.setRequestMethod("GET");
+//                    connection.setConnectTimeout(8000);
+//                    connection.setReadTimeout(8000);
+//                    int code = connection.getResponseCode();
+//                    if (code == 200){
+//                        InputStream in = connection.getInputStream();
+//                        // 下面对获取到的输入流进行读取
+////                        reader = new BufferedReader(new InputStreamReader(in));
+//                        reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+//                        StringBuilder response = new StringBuilder();
+//                        String line;
+//                        while ((line = reader.readLine()) != null) {
+//                            response.append(line);
+//                        }
+//                        Log.d(TAG, "run: " + response.toString());
+//                        showResponse(response.toString());
+//                    }
+//                    else{
+//                        Toast.makeText(MainActivity.this, "" + code, Toast.LENGTH_LONG).show();
+//                    }
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                } finally {
+//                    if (reader != null) {
+//                        try {
+//                            reader.close();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                    if (connection != null) {
+//                        connection.disconnect();
+//                    }
+//                }
+//            }
+//        }).start();
+//    }
 
 //    private void sendRequestWithOkHttp() {
 //        new Thread(new Runnable() {
@@ -108,15 +123,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                    OkHttpClient client = new OkHttpClient();
 //                    Request request = new Request.Builder()
 //                            // 指定访问的服务器地址是电脑本机
-//                            .url("http://10.0.2.2/get_data.json")
+//                            .url("http://172.16.45.1:8080/get_data.json")
+////                            .url("https://www.baidu.com")
 //                            .build();
 //                    Response response = client.newCall(request).execute();
-//                    String responseData = response.body().string();
-//                    parseJSONWithGSON(responseData);
-////                    parseJSONWithJSONObject(responseData);
-////                    parseXMLWithSAX(responseData);
-////                    parseXMLWithPull(responseData);
-////                    showResponse(responseData);
+//                    if(response.isSuccessful()){
+//                        String responseData = response.body().string();
+//                        parseJSONWithGSON(responseData);
+//                        parseJSONWithJSONObject(responseData);
+////                        parseXMLWithSAX(responseData);
+////                        parseXMLWithPull(responseData);
+//                        showResponse(responseData);
+//                    }else{
+//                        Toast.makeText(MainActivity.this, "" + response.code(), Toast.LENGTH_LONG).show();
+//                    }
+//
 //                } catch (Exception e) {
 //                    e.printStackTrace();
 //                }
@@ -180,32 +201,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        }
 //    }
 //
-//    private void parseJSONWithJSONObject(String jsonData) {
-//        try {
-//            JSONArray jsonArray = new JSONArray(jsonData);
-//            for (int i = 0; i < jsonArray.length(); i++) {
-//                JSONObject jsonObject = jsonArray.getJSONObject(i);
-//                String id = jsonObject.getString("id");
-//                String name = jsonObject.getString("name");
-//                String version = jsonObject.getString("version");
-//                Log.d("MainActivity", "id is " + id);
-//                Log.d("MainActivity", "name is " + name);
-//                Log.d("MainActivity", "version is " + version);
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void parseJSONWithGSON(String jsonData) {
-//        Gson gson = new Gson();
-//        List<App> appList = gson.fromJson(jsonData, new TypeToken<List<App>>() {}.getType());
-//        for (App app : appList) {
-//            Log.d("MainActivity", "id is " + app.getId());
-//            Log.d("MainActivity", "name is " + app.getName());
-//            Log.d("MainActivity", "version is " + app.getVersion());
-//        }
-//    }
+    private void parseJSONWithJSONObject(String jsonData) {
+        try {
+            JSONArray jsonArray = new JSONArray(jsonData);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                String id = jsonObject.getString("id");
+                String name = jsonObject.getString("name");
+                String version = jsonObject.getString("version");
+                Log.d("MainActivity", "id is " + id);
+                Log.d("MainActivity", "name is " + name);
+                Log.d("MainActivity", "version is " + version);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void parseJSONWithGSON(String jsonData) {
+        Gson gson = new Gson();
+        List<App> appList = gson.fromJson(jsonData, new TypeToken<List<App>>() {}.getType());
+        for (App app : appList) {
+            Log.d("MainActivity", "id is " + app.getId());
+            Log.d("MainActivity", "name is " + app.getName());
+            Log.d("MainActivity", "version is " + app.getVersion());
+        }
+    }
 
     private void showResponse(final String response) {
         runOnUiThread(new Runnable() {
