@@ -26,16 +26,21 @@ public class HttpUtil {
                     connection.setReadTimeout(8000);
                     connection.setDoInput(true);
                     connection.setDoOutput(true);
-                    InputStream in = connection.getInputStream();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    if (listener != null) {
-                        // 回调onFinish()方法
-                        listener.onFinish(response.toString());
+                    int code = connection.getResponseCode();
+                    if (code == 200){
+                        InputStream in = connection.getInputStream();
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                        StringBuilder response = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            response.append(line);
+                        }
+                        if (listener != null) {
+                            // 回调onFinish()方法
+                            listener.onFinish(response.toString());
+                        }
+                    }else{
+                        listener.onError(new Exception("Code=" + code));
                     }
                 } catch (Exception e) {
                     if (listener != null) {

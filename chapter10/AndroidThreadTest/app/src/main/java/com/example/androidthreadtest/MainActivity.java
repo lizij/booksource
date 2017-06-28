@@ -42,14 +42,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.change_text:
-                new Thread(new Runnable() {
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Message message = new Message();
+//                        message.what = UPDATE_TEXT;
+//                        handler.sendMessage(message); // 将Message对象发送出去
+//                    }
+//                }).start();
+                runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Message message = new Message();
-                        message.what = UPDATE_TEXT;
-                        handler.sendMessage(message); // 将Message对象发送出去
+                        text.setText("Nice");
                     }
-                }).start();
+                });
                 break;
             default:
                 break;

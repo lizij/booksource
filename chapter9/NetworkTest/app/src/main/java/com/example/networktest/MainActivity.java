@@ -53,14 +53,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (v.getId() == R.id.send_request) {
 //            sendRequestWithHttpURLConnection();
 //            sendRequestWithOkHttp();
-            HttpUtil.sendOkHttpRequest("https://www.baidu.com", new okhttp3.Callback(){
+//            HttpUtil.sendOkHttpRequest("https://www.baidu.com", new okhttp3.Callback(){
+//                @Override
+//                public void onResponse(Call call, Response response) throws IOException {
+//                    showResponse(response.body().string());
+//                }
+//
+//                @Override
+//                public void onFailure(Call call, IOException e) {
+//
+//                }
+//            });
+            HttpUtil.sendHttpRequest("https://www.baidu.com", new HttpCallbackListener() {
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    showResponse(response.body().string());
+                public void onFinish(String response) {
+                    showResponse(response.toString());
                 }
 
                 @Override
-                public void onFailure(Call call, IOException e) {
+                public void onError(Exception e) {
 
                 }
             });
